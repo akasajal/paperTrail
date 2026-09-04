@@ -7,6 +7,9 @@ import { RightInspector } from './components/inspector/RightInspector';
 import { PlayTestModal } from './components/preview/PlayTestModal';
 import { CharacterModal } from './components/sidebar/CharacterModal';
 import { LocationModal } from './components/sidebar/LocationModal';
+import { StoryStatsModal } from './components/analytics/StoryStatsModal';
+import { ScriptExportModal } from './components/export/ScriptExportModal';
+import { ShortcutsModal } from './components/help/ShortcutsModal';
 import { Character, Location, NodeType } from './types';
 
 export function App() {
@@ -81,7 +84,11 @@ export function App() {
   const [isLocModalOpen, setIsLocModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
-  // Keyboard Shortcuts (Undo/Redo & Save)
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isScriptExportOpen, setIsScriptExportOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+
+  // Keyboard Shortcuts (Undo/Redo, Save & Help)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Allow Ctrl+S even inside input fields
@@ -91,7 +98,7 @@ export function App() {
         return;
       }
 
-      // Ignore Undo/Redo inside text fields
+      // Ignore standard key bindings inside text inputs
       if (
         ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
       ) {
@@ -109,6 +116,9 @@ export function App() {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         redo();
+      } else if (e.key === '?') {
+        e.preventDefault();
+        setIsShortcutsOpen(true);
       }
     };
 
@@ -140,7 +150,7 @@ export function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen font-sans select-none bg-theme-bg text-theme-text transition-colors duration-200">
+    <div className="flex flex-col h-screen w-screen font-sans select-none bg-bg text-text transition-colors duration-200">
       {/* Top Header Navigation */}
       <TopBar
         project={project}
@@ -157,6 +167,9 @@ export function App() {
         onClearProject={clearProject}
         onUpdateProjectName={(name) => setProject((p) => ({ ...p, name }))}
         onToggleTheme={toggleTheme}
+        onOpenStats={() => setIsStatsOpen(true)}
+        onOpenScriptExport={() => setIsScriptExportOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />
 
       {/* Main Workspace */}
@@ -221,6 +234,7 @@ export function App() {
           onUpdateNodeData={updateNodeData}
           onDeleteNode={deleteNode}
           onSetStartNode={(id) => setProject((p) => ({ ...p, startNodeId: id }))}
+          onAddNode={addNode}
           onUpdateCharacter={updateCharacter}
           onUpdateLocation={updateLocation}
           onCloseInspector={() => {
@@ -239,6 +253,30 @@ export function App() {
         nodes={nodes}
         edges={edges}
         startNodeId={selectedNodeId}
+      />
+
+      {/* Story Analytics & Health Modal */}
+      <StoryStatsModal
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+        project={project}
+        nodes={nodes}
+        edges={edges}
+      />
+
+      {/* Script Export Modal */}
+      <ScriptExportModal
+        isOpen={isScriptExportOpen}
+        onClose={() => setIsScriptExportOpen(false)}
+        project={project}
+        nodes={nodes}
+        edges={edges}
+      />
+
+      {/* Keyboard Shortcuts Help Modal */}
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
       />
 
       {/* Character Modal */}

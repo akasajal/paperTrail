@@ -3,6 +3,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   BackgroundVariant,
   addEdge,
   Connection,
@@ -15,9 +16,10 @@ import { DialogueNode } from './nodes/DialogueNode';
 import { NarrationNode } from './nodes/NarrationNode';
 import { ActionNode } from './nodes/ActionNode';
 import { ChoiceNode } from './nodes/ChoiceNode';
+import { LabeledEdge } from './edges/LabeledEdge';
 import { SearchMenu } from './SearchMenu';
-import { FlowNode, FlowEdge, NodeType, Project } from '../../types';
-import { Plus, Sparkles } from 'lucide-react';
+import { FlowNode, FlowEdge, NodeType, Project, ChoiceNodeData } from '../../types';
+import { Plus, Sparkles, Map, Copy } from 'lucide-react';
 
 export interface CanvasProps {
   nodes: FlowNode[];
@@ -44,6 +46,7 @@ const CanvasInner: React.FC<CanvasProps> = ({
 }) => {
   const [searchMenuPos, setSearchMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [canvasClickPos, setCanvasClickPos] = useState<{ x: number; y: number }>({ x: 400, y: 300 });
+  const [showMiniMap, setShowMiniMap] = useState(true);
 
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -59,17 +62,48 @@ const CanvasInner: React.FC<CanvasProps> = ({
     []
   );
 
-  // Inject characters list into node data so dialogue nodes update dynamically
+  // Define custom edge types mapping
+  const edgeTypes = useMemo(
+    () => ({
+      labeled: LabeledEdge
+    }),
+    []
+  );
+
+  // Inject characters list and isStartNode into node data
   const nodesWithData = useMemo(() => {
     return nodes.map((node) => ({
       ...node,
       selected: node.id === selectedNodeId,
       data: {
         ...node.data,
-        charactersList: project.characters
+        charactersList: project.characters,
+        isStartNode: node.id === project.startNodeId
       }
     }));
-  }, [nodes, selectedNodeId, project.characters]);
+  }, [nodes, selectedNodeId, project.characters, project.startNodeId]);
+
+  // Inject dynamic labels onto edges (e.g. choice option text)
+  const edgesWithLabels = useMemo(() => {
+    return edges.map((edge) => {
+      let label = edge.label;
+      if (!label && edge.sourceHandle) {
+        const sourceNode = nodes.find((n) => n.id === edge.source);
+        if (sourceNode && sourceNode.type === 'choice') {
+          const choiceData = sourceNode.data as ChoiceNodeData;
+          const matchedChoice = (choiceData.choices || []).find((c) => c.id === edge.sourceHandle);
+          if (matchedChoice && matchedChoice.text) {
+            label = matchedChoice.text;
+          }
+        }
+      }
+      return {
+        ...edge,
+        type: 'labeled',
+        label
+      };
+    });
+  }, [edges, nodes]);
 
   // Handle Edge Connection
   const onConnect = useCallback(
@@ -77,12 +111,26 @@ const CanvasInner: React.FC<CanvasProps> = ({
       const newEdge: Edge = {
         ...connection,
         id: `edge-${connection.source}-${connection.sourceHandle || 'def'}-${connection.target}`,
-        type: 'smoothstep'
+        type: 'labeled'
       };
       onEdgesChange(addEdge(newEdge, edges) as FlowEdge[]);
     },
     [edges, onEdgesChange]
   );
+
+  // Duplicate Selected Node
+  const duplicateSelectedNode = useCallback(() => {
+    if (!selectedNodeId) return;
+    const nodeToDup = nodes.find((n) => n.id === selectedNodeId);
+    if (!nodeToDup) return;
+
+    const newPos = {
+      x: nodeToDup.position.x + 40,
+      y: nodeToDup.position.y + 40
+    };
+
+    onAddNode(nodeToDup.type as NodeType, newPos);
+  }, [selectedNodeId, nodes, onAddNode]);
 
   // Handle Right-click Context Menu on Canvas
   const onContextMenu = useCallback(
@@ -100,7 +148,7 @@ const CanvasInner: React.FC<CanvasProps> = ({
     [reactFlowInstance]
   );
 
-  // Handle Keyboard Space Key to open search menu
+  // Handle Keyboard Shortcuts
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (
@@ -115,6 +163,14 @@ const CanvasInner: React.FC<CanvasProps> = ({
         });
         setCanvasClickPos(centerPos);
         setSearchMenuPos({ x: window.innerWidth / 2 - 140, y: window.innerHeight / 2 - 100 });
+      } else if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'd' &&
+        !(event.target instanceof HTMLInputElement) &&
+        !(event.target instanceof HTMLTextAreaElement)
+      ) {
+        event.preventDefault();
+        duplicateSelectedNode();
       } else if (event.key === 'Delete' || event.key === 'Backspace') {
         if (
           selectedNodeId &&
@@ -125,7 +181,7 @@ const CanvasInner: React.FC<CanvasProps> = ({
         }
       }
     },
-    [reactFlowInstance, selectedNodeId, onDeleteNode]
+    [reactFlowInstance, selectedNodeId, onDeleteNode, duplicateSelectedNode]
   );
 
   return (
@@ -137,8 +193,11 @@ const CanvasInner: React.FC<CanvasProps> = ({
     >
       <ReactFlow
         nodes={nodesWithData}
-        edges={edges}
+        edges={edgesWithLabels}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        snapToGrid={true}
+        snapGrid={[16, 16]}
         onNodesChange={(changes: NodeChange[]) => {
           const updatedNodes = nodes.map((node) => {
             const change = changes.find((c) => 'id' in c && c.id === node.id);
@@ -165,11 +224,50 @@ const CanvasInner: React.FC<CanvasProps> = ({
         fitView={nodes.length > 0}
         minZoom={0.2}
         maxZoom={2}
-        defaultEdgeOptions={{ type: 'smoothstep' }}
+        defaultEdgeOptions={{ type: 'labeled' }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} color="var(--outline)" />
         <Controls className="!m-4" />
+
+        {showMiniMap && nodes.length > 0 && (
+          <MiniMap
+            nodeStrokeWidth={3}
+            nodeColor={(n) => {
+              if (n.type === 'dialogue') return 'var(--primary)';
+              if (n.type === 'choice') return 'var(--secondary)';
+              if (n.type === 'narration') return 'var(--bingo-complete)';
+              if (n.type === 'action') return 'var(--called-cell)';
+              return 'var(--outline)';
+            }}
+            maskColor="rgba(0, 0, 0, 0.4)"
+            className="!bg-surface !border !border-outline/30 !rounded-xl overflow-hidden !m-4 shadow-lg"
+          />
+        )}
       </ReactFlow>
+
+      {/* Floating Canvas Controls (MiniMap Toggle & Node Actions) */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {selectedNodeId && (
+          <button
+            onClick={duplicateSelectedNode}
+            className="px-3 py-1.5 bg-surface hover:bg-variant text-text text-xs font-semibold rounded-xl border border-outline/30 shadow-md flex items-center gap-1.5 transition-all active:scale-95"
+            title="Duplicate selected node (Ctrl+D)"
+          >
+            <Copy className="w-3.5 h-3.5 text-primary" /> Duplicate
+          </button>
+        )}
+        <button
+          onClick={() => setShowMiniMap(!showMiniMap)}
+          className={`p-2 rounded-xl border shadow-md transition-all ${
+            showMiniMap
+              ? 'bg-primary-container text-primary border-primary/40'
+              : 'bg-surface hover:bg-variant text-muted border-outline/30'
+          }`}
+          title="Toggle MiniMap"
+        >
+          <Map className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Empty State Overlay when no nodes exist */}
       {nodes.length === 0 && (
