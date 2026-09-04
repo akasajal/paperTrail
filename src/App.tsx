@@ -53,6 +53,18 @@ export function App() {
     }
   });
 
+  // Apply theme class directly to documentElement
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -128,11 +140,7 @@ export function App() {
   };
 
   return (
-    <div
-      className={`flex flex-col h-screen w-screen font-sans select-none transition-colors duration-200 ${
-        theme === 'dark' ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-50 text-slate-800'
-      }`}
-    >
+    <div className="flex flex-col h-screen w-screen font-sans select-none bg-theme-bg text-theme-text transition-colors duration-200">
       {/* Top Header Navigation */}
       <TopBar
         project={project}

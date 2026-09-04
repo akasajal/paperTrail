@@ -8,12 +8,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        editor: {
-          bg: '#0f1117',
-          panel: '#161922',
-          card: '#1e2230',
-          border: '#2a2f42',
-          accent: '#3b82f6',
+        theme: {
+          bg: 'var(--background)',
+          surface: 'var(--surface)',
+          variant: 'var(--surface-variant)',
+          primary: 'var(--primary)',
+          'primary-container': 'var(--primary-container)',
+          secondary: 'var(--secondary)',
+          'secondary-container': 'var(--secondary-container)',
+          text: 'var(--text)',
+          muted: 'var(--muted-text)',
+          outline: 'var(--outline)',
+          board: 'var(--board)',
+          cell: 'var(--cell)',
+          called: 'var(--called-cell)',
+          complete: 'var(--bingo-complete)',
         }
       },
       fontFamily: {
