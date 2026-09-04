@@ -131,7 +131,7 @@ const CanvasInner: React.FC<CanvasProps> = ({
   return (
     <div
       ref={reactFlowWrapper}
-      className="w-full h-full relative select-none outline-none bg-slate-100 dark:bg-slate-950 transition-colors duration-200"
+      className="w-full h-full relative select-none outline-none bg-bg transition-colors duration-200"
       onKeyDown={onKeyDown}
       tabIndex={0}
     >
@@ -167,22 +167,22 @@ const CanvasInner: React.FC<CanvasProps> = ({
         maxZoom={2}
         defaultEdgeOptions={{ type: 'smoothstep' }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} className="dark:opacity-80" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} color="var(--outline)" />
         <Controls className="!m-4" />
       </ReactFlow>
 
       {/* Empty State Overlay when no nodes exist */}
       {nodes.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-sm pointer-events-none z-10">
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center max-w-md shadow-2xl pointer-events-auto space-y-4">
-            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-900/60 rounded-xl flex items-center justify-center mx-auto text-indigo-600 dark:text-indigo-400">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg/80 backdrop-blur-sm pointer-events-none z-10">
+          <div className="bg-surface p-8 rounded-2xl border border-outline/30 text-center max-w-md shadow-2xl pointer-events-auto space-y-4">
+            <div className="w-12 h-12 bg-primary-container/40 border border-primary/30 rounded-xl flex items-center justify-center mx-auto text-primary">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Your story starts here</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-text">Your story starts here</h3>
+              <p className="text-xs text-muted mt-1 leading-relaxed">
                 Create your first node to begin building your visual novel or dialogue flow. Press{' '}
-                <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded text-[10px] text-slate-700 dark:text-slate-300 font-mono">
+                <kbd className="px-1.5 py-0.5 bg-variant border border-outline/30 rounded text-[10px] text-text font-mono">
                   Space
                 </kbd>{' '}
                 or right-click anywhere to search nodes.
@@ -191,13 +191,13 @@ const CanvasInner: React.FC<CanvasProps> = ({
             <div className="flex flex-wrap gap-2 justify-center pt-2">
               <button
                 onClick={() => onAddNode('narration', { x: 300, y: 200 })}
-                className="px-3.5 py-2 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 bg-complete/15 hover:bg-complete/25 text-complete text-xs font-semibold rounded-lg border border-complete/30 flex items-center gap-1.5 transition-colors"
               >
                 <Plus className="w-4 h-4" /> + Narration
               </button>
               <button
                 onClick={() => onAddNode('dialogue', { x: 300, y: 200 })}
-                className="px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-900/60 flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 bg-primary-container/50 hover:bg-primary-container text-primary text-xs font-semibold rounded-lg border border-primary/30 flex items-center gap-1.5 transition-colors"
               >
                 <Plus className="w-4 h-4" /> + Dialogue
               </button>

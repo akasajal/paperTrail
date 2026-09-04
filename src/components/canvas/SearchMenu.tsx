@@ -14,28 +14,28 @@ const NODE_TYPES: { type: NodeType; label: string; desc: string; icon: React.Rea
     label: 'Dialogue',
     desc: 'Character speech with dialogue text',
     icon: <MessageSquare className="w-4 h-4" />,
-    color: 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/40'
+    color: 'text-primary border-primary/30 bg-primary-container/40'
   },
   {
     type: 'narration',
     label: 'Narration',
     desc: 'Scene description, thoughts, and narration',
     icon: <BookOpen className="w-4 h-4" />,
-    color: 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40'
+    color: 'text-complete border-complete/30 bg-complete/15'
   },
   {
     type: 'action',
     label: 'Action',
     desc: 'Event or action occurring in scene',
     icon: <Zap className="w-4 h-4" />,
-    color: 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900/60 bg-purple-50 dark:bg-purple-950/40'
+    color: 'text-called border-called/30 bg-called/15'
   },
   {
     type: 'choice',
     label: 'Choice Branch',
     desc: 'Player decision with multiple outcome routes',
     icon: <GitFork className="w-4 h-4" />,
-    color: 'text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40'
+    color: 'text-secondary border-secondary/30 bg-secondary-container/40'
   }
 ];
 
@@ -76,24 +76,24 @@ export const SearchMenu: React.FC<SearchMenuProps> = ({ position, onSelectType, 
   return (
     <div
       ref={containerRef}
-      className="fixed z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur"
+      className="fixed z-50 w-72 bg-surface border border-outline/30 rounded-xl shadow-2xl overflow-hidden backdrop-blur text-text"
       style={{ left: position.x, top: position.y }}
     >
-      <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-slate-50 dark:bg-slate-950/60">
-        <Search className="w-4 h-4 text-slate-400 shrink-0" />
+      <div className="p-2.5 border-b border-outline/30 flex items-center gap-2 bg-variant/50">
+        <Search className="w-4 h-4 text-muted shrink-0" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search node types..."
-          className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+          className="w-full bg-transparent text-xs text-text placeholder-muted focus:outline-none"
         />
       </div>
 
       <div className="p-1.5 space-y-1 max-h-64 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="p-3 text-center text-xs text-slate-400 dark:text-slate-500">No matching node types</div>
+          <div className="p-3 text-center text-xs text-muted">No matching node types</div>
         ) : (
           filtered.map((item) => (
             <button
@@ -102,16 +102,16 @@ export const SearchMenu: React.FC<SearchMenuProps> = ({ position, onSelectType, 
                 onSelectType(item.type);
                 onClose();
               }}
-              className="w-full text-left p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-start gap-2.5 transition-colors group"
+              className="w-full text-left p-2 rounded-lg hover:bg-cell flex items-start gap-2.5 transition-colors group"
             >
               <div className={`p-1.5 rounded-md border shrink-0 ${item.color}`}>
                 {item.icon}
               </div>
               <div className="truncate">
-                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+                <div className="text-xs font-semibold text-text group-hover:text-primary">
                   {item.label}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{item.desc}</div>
+                <div className="text-[10px] text-muted truncate">{item.desc}</div>
               </div>
             </button>
           ))
