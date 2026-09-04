@@ -5,7 +5,7 @@
 
 @layer base {
   body {
-    @apply bg-editor-bg text-slate-100 font-sans;
+    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans transition-colors duration-200;
   }
 }
 
@@ -20,10 +20,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-700/60 rounded-full hover:bg-slate-600 transition-colors;
+  @apply bg-slate-300 dark:bg-slate-700/60 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors;
 }
 
-/* React Flow Dark Styling Adjustments */
+/* React Flow Canvas Styling */
 .react-flow__node {
   border-radius: 0.75rem;
   padding: 0;
@@ -33,46 +33,62 @@
 .react-flow__handle {
   width: 12px;
   height: 12px;
-  background-color: #64748b;
-  border: 2px solid #0f1117;
+  border-radius: 50%;
   transition: all 0.15s ease;
 }
 
 .react-flow__handle:hover {
-  background-color: #3b82f6;
-  scale: 1.2;
-}
-
-.react-flow__handle-connecting {
-  background-color: #3b82f6;
+  scale: 1.25;
 }
 
 .react-flow__edge-path {
   stroke-width: 2.5px;
+}
+
+.dark .react-flow__edge-path {
   stroke: #475569;
 }
 
+.light .react-flow__edge-path,
+:not(.dark) .react-flow__edge-path {
+  stroke: #94a3b8;
+}
+
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #3b82f6;
+  stroke: #6366f1 !important;
   stroke-width: 3.5px;
 }
 
 .react-flow__controls {
-  background-color: #161922 !important;
-  border: 1px solid #2a2f42 !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  @apply border rounded-xl shadow-lg transition-colors !important;
 }
 
-.react-flow__controls-button {
-  background-color: #161922 !important;
-  border-bottom: 1px solid #2a2f42 !important;
+.dark .react-flow__controls {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.light .react-flow__controls,
+:not(.dark) .react-flow__controls {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+.dark .react-flow__controls-button {
+  background-color: #0f172a !important;
+  border-bottom-color: #1e293b !important;
   color: #94a3b8 !important;
 }
 
+.light .react-flow__controls-button,
+:not(.dark) .react-flow__controls-button {
+  background-color: #ffffff !important;
+  border-bottom-color: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
 .react-flow__controls-button:hover {
-  background-color: #1e2230 !important;
-  color: #f8fafc !important;
+  @apply bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 !important;
 }
 
 .react-flow__attribution {

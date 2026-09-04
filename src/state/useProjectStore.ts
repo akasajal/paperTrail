@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Project, Character, Location, FlowNode, FlowEdge, NodeType, FlowNodeData } from '../types';
-import { SAMPLE_PROJECT, SAMPLE_NODES, SAMPLE_EDGES } from '../sample/sampleProject';
+import { EMPTY_PROJECT, EMPTY_NODES, EMPTY_EDGES } from '../sample/sampleProject';
 
-const STORAGE_KEY = 'narrative_flow_editor_project';
+const STORAGE_KEY = 'papertrail_project_v3';
+
+// Clear old legacy keys from previous versions
+try {
+  localStorage.removeItem('narrative_flow_editor_project_meta');
+  localStorage.removeItem('narrative_flow_editor_project_nodes');
+  localStorage.removeItem('narrative_flow_editor_project_edges');
+} catch {}
 
 interface AppSnapshot {
   project: Project;
@@ -11,32 +18,34 @@ interface AppSnapshot {
 }
 
 export function useProjectStore() {
-  const [project, setProject] = useState<Project>(() => {
+  const [project, setProjectState] = useState<Project>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY + '_meta');
-      return raw ? JSON.parse(raw) : SAMPLE_PROJECT;
+      return raw ? JSON.parse(raw) : EMPTY_PROJECT;
     } catch {
-      return SAMPLE_PROJECT;
+      return EMPTY_PROJECT;
     }
   });
 
-  const [nodes, setNodes] = useState<FlowNode[]>(() => {
+  const [nodes, setNodesState] = useState<FlowNode[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY + '_nodes');
-      return raw ? JSON.parse(raw) : SAMPLE_NODES;
+      return raw ? JSON.parse(raw) : EMPTY_NODES;
     } catch {
-      return SAMPLE_NODES;
+      return EMPTY_NODES;
     }
   });
 
-  const [edges, setEdges] = useState<FlowEdge[]>(() => {
+  const [edges, setEdgesState] = useState<FlowEdge[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY + '_edges');
-      return raw ? JSON.parse(raw) : SAMPLE_EDGES;
+      return raw ? JSON.parse(raw) : EMPTY_EDGES;
     } catch {
-      return SAMPLE_EDGES;
+      return EMPTY_EDGES;
     }
   });
+
+  const [isDirty, setIsDirty] = useState(false);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEntityType, setSelectedEntityType] = useState<'character' | 'location' | null>(null);
@@ -49,18 +58,36 @@ export function useProjectStore() {
   // Record history snapshot before mutating graph/project
   const pushHistory = useCallback(() => {
     setHistory((prev) => [
-      ...prev.slice(-30), // Max 30 undo steps
+      ...prev.slice(-30),
       { project, nodes, edges }
     ]);
     setFuture([]);
+    setIsDirty(true);
   }, [project, nodes, edges]);
 
-  // Save to localStorage
-  useEffect(() => {
+  // Setters that mark as dirty
+  const setProject = useCallback((action: React.SetStateAction<Project>) => {
+    pushHistory();
+    setProjectState(action);
+  }, [pushHistory]);
+
+  const setNodes = useCallback((action: React.SetStateAction<FlowNode[]>) => {
+    setNodesState(action);
+    setIsDirty(true);
+  }, []);
+
+  const setEdges = useCallback((action: React.SetStateAction<FlowEdge[]>) => {
+    setEdgesState(action);
+    setIsDirty(true);
+  }, []);
+
+  // Save explicitly to localStorage
+  const saveProject = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY + '_meta', JSON.stringify(project));
       localStorage.setItem(STORAGE_KEY + '_nodes', JSON.stringify(nodes));
       localStorage.setItem(STORAGE_KEY + '_edges', JSON.stringify(edges));
+      setIsDirty(false);
     } catch (e) {
       console.error('Failed to save to local storage:', e);
     }
@@ -71,10 +98,11 @@ export function useProjectStore() {
     if (history.length === 0) return;
     const last = history[history.length - 1];
     setFuture((prev) => [{ project, nodes, edges }, ...prev]);
-    setProject(last.project);
-    setNodes(last.nodes);
-    setEdges(last.edges);
+    setProjectState(last.project);
+    setNodesState(last.nodes);
+    setEdgesState(last.edges);
     setHistory((prev) => prev.slice(0, -1));
+    setIsDirty(true);
   }, [history, project, nodes, edges]);
 
   // Redo Action
@@ -82,16 +110,17 @@ export function useProjectStore() {
     if (future.length === 0) return;
     const next = future[0];
     setHistory((prev) => [...prev, { project, nodes, edges }]);
-    setProject(next.project);
-    setNodes(next.nodes);
-    setEdges(next.edges);
+    setProjectState(next.project);
+    setNodesState(next.nodes);
+    setEdgesState(next.edges);
     setFuture((prev) => prev.slice(1));
+    setIsDirty(true);
   }, [future, project, nodes, edges]);
 
   // Character Management
   const addCharacter = (char: Character) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       characters: [...prev.characters, char]
     }));
@@ -99,7 +128,7 @@ export function useProjectStore() {
 
   const updateCharacter = (id: string, updates: Partial<Character>) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       characters: prev.characters.map((c) => (c.id === id ? { ...c, ...updates } : c))
     }));
@@ -107,7 +136,7 @@ export function useProjectStore() {
 
   const deleteCharacter = (id: string) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       characters: prev.characters.filter((c) => c.id !== id)
     }));
@@ -116,7 +145,7 @@ export function useProjectStore() {
   // Location Management
   const addLocation = (loc: Location) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       locations: [...prev.locations, loc]
     }));
@@ -124,7 +153,7 @@ export function useProjectStore() {
 
   const updateLocation = (id: string, updates: Partial<Location>) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       locations: prev.locations.map((l) => (l.id === id ? { ...l, ...updates } : l))
     }));
@@ -132,7 +161,7 @@ export function useProjectStore() {
 
   const deleteLocation = (id: string) => {
     pushHistory();
-    setProject((prev) => ({
+    setProjectState((prev) => ({
       ...prev,
       locations: prev.locations.filter((l) => l.id !== id)
     }));
@@ -148,21 +177,21 @@ export function useProjectStore() {
       case 'dialogue':
         data = {
           characterId: project.characters[0]?.id || '',
-          text: 'Enter dialogue line...'
+          text: ''
         };
         break;
       case 'narration':
-        data = { text: 'Enter narration text...' };
+        data = { text: '' };
         break;
       case 'action':
-        data = { description: 'Describe action...' };
+        data = { description: '' };
         break;
       case 'choice':
         data = {
-          question: 'What do you do?',
+          question: '',
           choices: [
-            { id: `choice-${Date.now()}-1`, text: 'Option 1' },
-            { id: `choice-${Date.now()}-2`, text: 'Option 2' }
+            { id: `choice-${Date.now()}-1`, text: '' },
+            { id: `choice-${Date.now()}-2`, text: '' }
           ]
         };
         break;
@@ -175,22 +204,23 @@ export function useProjectStore() {
       data
     };
 
-    setNodes((prev) => [...prev, newNode]);
+    setNodesState((prev) => [...prev, newNode]);
     setSelectedNodeId(id);
     setSelectedEntityType(null);
+    setIsDirty(true);
   };
 
   const updateNodeData = (nodeId: string, newData: FlowNodeData) => {
     pushHistory();
-    setNodes((prev) =>
+    setNodesState((prev) =>
       prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...newData } } : n))
     );
   };
 
   const deleteNode = (nodeId: string) => {
     pushHistory();
-    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
-    setEdges((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    setNodesState((prev) => prev.filter((n) => n.id !== nodeId));
+    setEdgesState((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
     if (selectedNodeId === nodeId) setSelectedNodeId(null);
   };
 
@@ -213,20 +243,27 @@ export function useProjectStore() {
   const importProjectJson = (jsonData: any) => {
     if (jsonData && jsonData.project && jsonData.nodes) {
       pushHistory();
-      setProject(jsonData.project);
-      setNodes(jsonData.nodes || []);
-      setEdges(jsonData.edges || []);
+      setProjectState(jsonData.project);
+      setNodesState(jsonData.nodes || []);
+      setEdgesState(jsonData.edges || []);
       setSelectedNodeId(null);
       setSelectedEntityId(null);
+      setIsDirty(true);
     }
   };
 
-  const resetToSample = () => {
+  const clearProject = () => {
     pushHistory();
-    setProject(SAMPLE_PROJECT);
-    setNodes(SAMPLE_NODES);
-    setEdges(SAMPLE_EDGES);
+    setProjectState(EMPTY_PROJECT);
+    setNodesState(EMPTY_NODES);
+    setEdgesState(EMPTY_EDGES);
     setSelectedNodeId(null);
+    setSelectedEntityType(null);
+    setSelectedEntityId(null);
+    setIsDirty(false);
+    localStorage.removeItem(STORAGE_KEY + '_meta');
+    localStorage.removeItem(STORAGE_KEY + '_nodes');
+    localStorage.removeItem(STORAGE_KEY + '_edges');
   };
 
   return {
@@ -236,6 +273,8 @@ export function useProjectStore() {
     setNodes,
     edges,
     setEdges,
+    isDirty,
+    saveProject,
     selectedNodeId,
     setSelectedNodeId,
     selectedEntityType,
@@ -258,6 +297,6 @@ export function useProjectStore() {
     deleteNode,
     exportProjectJson,
     importProjectJson,
-    resetToSample
+    clearProject
   };
 }

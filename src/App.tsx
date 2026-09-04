@@ -17,6 +17,8 @@ export function App() {
     setNodes,
     edges,
     setEdges,
+    isDirty,
+    saveProject,
     selectedNodeId,
     setSelectedNodeId,
     selectedEntityType,
@@ -38,8 +40,26 @@ export function App() {
     deleteNode,
     exportProjectJson,
     importProjectJson,
-    resetToSample
+    clearProject
   } = useProjectStore();
+
+  // Theme state ('light' | 'dark')
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const stored = localStorage.getItem('papertrail_theme');
+      return (stored as 'light' | 'dark') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem('papertrail_theme', nextTheme);
+    } catch {}
+  };
 
   // Modals & Panels state
   const [isPlayTestOpen, setIsPlayTestOpen] = useState(false);
@@ -49,10 +69,17 @@ export function App() {
   const [isLocModalOpen, setIsLocModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
-  // Keyboard Shortcuts (Undo/Redo)
+  // Keyboard Shortcuts (Undo/Redo & Save)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore when typing inside input / textarea
+      // Allow Ctrl+S even inside input fields
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveProject();
+        return;
+      }
+
+      // Ignore Undo/Redo inside text fields
       if (
         ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
       ) {
@@ -75,7 +102,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, saveProject]);
 
   // Handle Character Modal Save
   const handleSaveCharacter = (char: Character) => {
@@ -97,27 +124,34 @@ export function App() {
 
   // Handle Adding Node from Left Sidebar
   const handleAddNodeFromSidebar = (type: NodeType) => {
-    // Add near canvas center position
     addNode(type, { x: 300 + Math.random() * 50, y: 200 + Math.random() * 50 });
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
+    <div
+      className={`flex flex-col h-screen w-screen font-sans select-none transition-colors duration-200 ${
+        theme === 'dark' ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-50 text-slate-800'
+      }`}
+    >
       {/* Top Header Navigation */}
       <TopBar
         project={project}
         canUndo={canUndo}
         canRedo={canRedo}
+        isDirty={isDirty}
+        theme={theme}
         onUndo={undo}
         onRedo={redo}
+        onSave={saveProject}
         onPlayTest={() => setIsPlayTestOpen(true)}
         onExport={exportProjectJson}
         onImport={importProjectJson}
-        onResetToSample={resetToSample}
+        onClearProject={clearProject}
         onUpdateProjectName={(name) => setProject((p) => ({ ...p, name }))}
+        onToggleTheme={toggleTheme}
       />
 
-      {/* Main Workspace Workspace */}
+      {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar */}
         <LeftSidebar
