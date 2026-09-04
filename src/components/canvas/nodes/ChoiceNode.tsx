@@ -9,10 +9,10 @@ export const ChoiceNode: React.FC<NodeProps<FlowNode>> = ({ data, selected }) =>
 
   return (
     <div
-      className={`w-72 rounded-xl border-2 shadow-md transition-all overflow-hidden bg-surface text-text ${
+      className={`w-72 rounded-xl border-2 shadow-sm transition-all overflow-hidden bg-surface text-text ${
         selected
-          ? 'border-secondary ring-2 ring-secondary/30 shadow-lg'
-          : 'border-outline/40 hover:border-outline'
+          ? 'border-secondary ring-2 ring-secondary/20 shadow-md'
+          : 'border-outline/25 hover:border-outline/50'
       }`}
     >
       <Handle
@@ -22,7 +22,7 @@ export const ChoiceNode: React.FC<NodeProps<FlowNode>> = ({ data, selected }) =>
       />
 
       {/* Header */}
-      <div className="bg-secondary-container/60 px-3.5 py-2 border-b border-outline/30 flex items-center justify-between">
+      <div className="bg-secondary-container/30 px-3.5 py-2 border-b border-outline/20 flex items-center justify-between">
         <span className="text-[11px] font-bold text-secondary tracking-wider uppercase flex items-center gap-1.5">
           <GitFork className="w-3.5 h-3.5 text-secondary" /> Choice Branch
         </span>
@@ -33,7 +33,7 @@ export const ChoiceNode: React.FC<NodeProps<FlowNode>> = ({ data, selected }) =>
 
       {/* Body Question Prompt */}
       <div className="p-3 space-y-3 text-xs">
-        <p className="text-text text-xs font-semibold font-serif bg-variant/50 p-2.5 rounded-lg border border-outline/20">
+        <p className="text-text text-xs font-semibold font-serif bg-variant/40 p-2.5 rounded-lg border border-outline/15">
           {choiceData.question || 'What do you do?'}
         </p>
 
@@ -42,7 +42,7 @@ export const ChoiceNode: React.FC<NodeProps<FlowNode>> = ({ data, selected }) =>
           {choices.map((choice, index) => (
             <div
               key={choice.id}
-              className="relative flex items-center justify-between bg-cell hover:bg-secondary-container/40 px-3 py-2 rounded-lg border border-outline/30 text-text text-xs transition-colors"
+              className="relative flex items-center justify-between bg-cell hover:bg-secondary-container/20 px-3 py-2 rounded-lg border border-outline/20 text-text text-xs transition-colors"
             >
               <span className="truncate pr-4 font-medium">
                 {index + 1}. {choice.text || 'Choice option...'}
