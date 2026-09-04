@@ -1,3 +1,5 @@
+> project in progress
+
 # PaperTrail - Visual Novel & Gameplay Dialogue Flow Editor
 
 PaperTrail is a desktop-first web application designed for drafting choice-based gameplay dialogue and visual-novel-style narrative flows using an infinite node-based canvas.
